@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/GitHub-MatchaMenu.iml" filepath="$PROJECT_DIR$/GitHub-MatchaMenu.iml" />
       <module fileurl="file://$PROJECT_DIR$/MatchaMenu.iml" filepath="$PROJECT_DIR$/MatchaMenu.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
