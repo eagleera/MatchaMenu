@@ -3,4 +3,7 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+    <color name="matchaGreen">#62b63e</color>
+    <color name="matchaBackground">#7ed957</color>
+    <color name="matchaWhite">#EEDCD4</color>
 </resources>
