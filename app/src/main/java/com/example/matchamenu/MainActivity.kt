@@ -14,56 +14,59 @@ import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONException
 import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_main.*
+import java.lang.reflect.Type
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var restaurantList: MutableList<Restaurant>
     private val PREF_NAME = "favs"
     internal var qrScanIntegrator: IntentIntegrator? = null
+    private val FAV_STRING = "favs"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, 0)
-        val favs: MutableSet<String>? = sharedPref.getStringSet(PREF_NAME, HashSet())
         fab.setOnClickListener { view ->
             performAction()
         }
         qrScanIntegrator = IntentIntegrator(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
         restaurantList = mutableListOf()
+        val arr = getArrayList(FAV_STRING)
+        if (arr != null) {
+            arr!!.toMutableList()
+        }
+        val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
+        listView.adapter = adapter
         val db = FirebaseFirestore.getInstance()
         val restaRef = db.collection("restaurant")
-
-//        restaRef.whereIn(restaRef.id, )
-//            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-//                @Override
-//                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-//                    if (task.isSuccessful()) {
-//                        for (QueryDocumentSnapshot document : task.getResult()) {
-//                            Log.d(TAG, document.getId() + " => " + document.getData());
-//                        }
-//                    } else {
-//                        Log.w(TAG, "Error getting documents.", task.getException());
-//                    }
-//                }
-//        ref = FirebaseDatabase.getInstance().getReference("restaurants")
-//        ref.addValueEventListener(object: ValueEventListener {
-//            override fun onCancelled(p0: DatabaseError) {
-//
-//            }
-//
-//            override fun onDataChange(p0: DataSnapshot) {
-//                if(p0!!.exists()){
-//                    for (r in p0.children){
-//                        val resta = r.getValue(Restaurant::class.java)
-//                        restaurantList.add(resta!!)
-//                    }
-//                }
-//                val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
-//                listView.adapter = adapter
-//            }
-//        })
+        if (arr != null) {
+            arr.forEach { resId ->
+                restaRef.document("$resId")
+                    .get()
+                    .addOnCompleteListener { resta ->
+                        if (resta != null) {
+                            val restaTemp = Restaurant(
+                                "$resId",
+                                (resta.result?.data?.get("name")?.toString() ?: "")
+                            )
+                            restaurantList.add(restaTemp)
+                            adapter.notifyDataSetChanged()
+                        } else {
+                            Log.d("HOLA", "No such document")
+                        }
+                    }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -96,9 +99,11 @@ class MainActivity : AppCompatActivity() {
                 // If QRCode contains data.
                 try {
                     // Converting the data to json format
-                    Log.d("Chris",result.contents)
-                    startActivity(Intent(this, com.example.matchamenu.Menu::class.java)
-                        .putExtra(com.example.matchamenu.Menu.RESTAURANT_ID, result.contents))
+                    Log.d("Chris", result.contents)
+                    startActivity(
+                        Intent(this, com.example.matchamenu.Menu::class.java)
+                            .putExtra(com.example.matchamenu.Menu.RESTAURANT_ID, result.contents)
+                    )
                 } catch (e: JSONException) {
                     e.printStackTrace()
 
@@ -114,4 +119,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    fun getArrayList(key: String?): ArrayList<String?>? {
+        val prefs = getSharedPreferences(PREF_NAME, 0)
+        val gson = Gson()
+        val json = prefs.getString(key, null)
+        val type: Type = object : TypeToken<ArrayList<String?>?>() {}.getType()
+        return gson.fromJson(json, type)
     }
+
+}

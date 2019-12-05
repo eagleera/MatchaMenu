@@ -24,7 +24,7 @@ class DishAdapter(val mCtx: Context,val layoutResId:Int,val  dishList: List<Dish
         val dish = dishList[position]
 
         textViewName.text = dish.name
-        textViewPrice.text = dish.price
+        textViewPrice.text = dish.price.toString()
 
         return view
 
