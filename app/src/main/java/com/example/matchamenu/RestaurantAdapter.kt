@@ -24,7 +24,6 @@ class RestaurantAdapter(val mCtx: Context, val layoutResId: Int, val restaurantL
         textViewName.setOnClickListener{
             mCtx.startActivity(Intent(mCtx, Menu::class.java)
                 .putExtra(Menu.RESTAURANT_ID, restaurant.id))
-
         }
         return view;
     }

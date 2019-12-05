@@ -2,18 +2,23 @@ package com.example.matchamenu
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_main.*
-import sun.jvm.hotspot.utilities.IntArray
+import kotlinx.android.synthetic.main.content_main.*
+import java.lang.reflect.Type
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var restaurantList: MutableList<Restaurant>
     private val PREF_NAME = "favs"
+    private val FAV_STRING = "favs"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,44 +26,42 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, 0)
-        val favs: MutableSet<String>? = sharedPref.getStringSet(PREF_NAME, HashSet())
+        val arrayList = ArrayList<String>()
+        arrayList.add("RFpbvqc6AVR7Qsmfn52E")
+        val editor: SharedPreferences.Editor = sharedPref.edit()
+        val gson = Gson()
+        val json = gson.toJson(arrayList)
+        editor.putString(FAV_STRING, json)
+        editor.commit()
+        editor.apply()
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
         restaurantList = mutableListOf()
+        val arr = getArrayList(FAV_STRING)
+        arr!!.toMutableList()
+        val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
+        listView.adapter = adapter
         val db = FirebaseFirestore.getInstance()
         val restaRef = db.collection("restaurant")
-
-//        restaRef.whereIn(restaRef.id, )
-//            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-//                @Override
-//                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-//                    if (task.isSuccessful()) {
-//                        for (QueryDocumentSnapshot document : task.getResult()) {
-//                            Log.d(TAG, document.getId() + " => " + document.getData());
-//                        }
-//                    } else {
-//                        Log.w(TAG, "Error getting documents.", task.getException());
-//                    }
-//                }
-//        ref = FirebaseDatabase.getInstance().getReference("restaurants")
-//        ref.addValueEventListener(object: ValueEventListener {
-//            override fun onCancelled(p0: DatabaseError) {
-//
-//            }
-//
-//            override fun onDataChange(p0: DataSnapshot) {
-//                if(p0!!.exists()){
-//                    for (r in p0.children){
-//                        val resta = r.getValue(Restaurant::class.java)
-//                        restaurantList.add(resta!!)
-//                    }
-//                }
-//                val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
-//                listView.adapter = adapter
-//            }
-//        })
+        arr.forEach {resId ->
+            Log.d("HOLA", resId.toString())
+            restaRef.document("$resId")
+                .get()
+                .addOnCompleteListener { resta ->
+                    if (resta != null) {
+                        val restaTemp = Restaurant(
+                            "$resId",
+                            (resta.result?.data?.get("name")?.toString() ?: "")
+                        )
+                        restaurantList.add(restaTemp)
+                        adapter.notifyDataSetChanged()
+                    } else {
+                        Log.d("HOLA", "No such document")
+                    }
+                }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -75,5 +78,13 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    fun getArrayList(key: String?): ArrayList<String?>? {
+        val prefs = getSharedPreferences(PREF_NAME, 0)
+        val gson = Gson()
+        val json = prefs.getString(key, null)
+        val type: Type = object : TypeToken<ArrayList<String?>?>() {}.getType()
+        return gson.fromJson(json, type)
     }
 }
