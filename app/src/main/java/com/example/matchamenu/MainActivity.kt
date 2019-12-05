@@ -1,20 +1,25 @@
 package com.example.matchamenu
 
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.android.synthetic.main.activity_main.*
-import sun.jvm.hotspot.utilities.IntArray
+import org.json.JSONException
+import org.json.JSONObject
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var restaurantList: MutableList<Restaurant>
     private val PREF_NAME = "favs"
-
+    internal var qrScanIntegrator: IntentIntegrator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme)
@@ -23,9 +28,9 @@ class MainActivity : AppCompatActivity() {
         val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, 0)
         val favs: MutableSet<String>? = sharedPref.getStringSet(PREF_NAME, HashSet())
         fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
+            performAction()
         }
+        qrScanIntegrator = IntentIntegrator(this)
         restaurantList = mutableListOf()
         val db = FirebaseFirestore.getInstance()
         val restaRef = db.collection("restaurant")
@@ -76,4 +81,37 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-}
+
+    private fun performAction() {
+        qrScanIntegrator?.initiateScan()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (result != null) {
+            // If QRCode has no data.
+            if (result.contents == null) {
+                Toast.makeText(this, "Not Found", Toast.LENGTH_LONG).show()
+            } else {
+                // If QRCode contains data.
+                try {
+                    // Converting the data to json format
+                    Log.d("Chris",result.contents)
+                    startActivity(Intent(this, com.example.matchamenu.Menu::class.java)
+                        .putExtra(com.example.matchamenu.Menu.RESTAURANT_ID, result.contents))
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+
+                    // Data not in the expected format. So, whole object as toast message.
+
+                    Log.d("Chris", e.toString())
+                    Toast.makeText(this, result.contents, Toast.LENGTH_LONG).show()
+                }
+
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    }
