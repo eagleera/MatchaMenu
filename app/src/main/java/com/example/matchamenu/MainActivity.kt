@@ -1,46 +1,64 @@
 package com.example.matchamenu
 
+import android.content.SharedPreferences
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import com.google.firebase.database.*
-
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.content_main.*
+import sun.jvm.hotspot.utilities.IntArray
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var restaurantList: MutableList<Restaurant>
-    lateinit var ref: DatabaseReference
+    private val PREF_NAME = "favs"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, 0)
+        val favs: MutableSet<String>? = sharedPref.getStringSet(PREF_NAME, HashSet())
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
         restaurantList = mutableListOf()
-        ref = FirebaseDatabase.getInstance().getReference("restaurants")
-        ref.addValueEventListener(object: ValueEventListener {
-            override fun onCancelled(p0: DatabaseError) {
+        val db = FirebaseFirestore.getInstance()
+        val restaRef = db.collection("restaurant")
 
-            }
-
-            override fun onDataChange(p0: DataSnapshot) {
-                if(p0!!.exists()){
-                    for (r in p0.children){
-                        val resta = r.getValue(Restaurant::class.java)
-                        restaurantList.add(resta!!)
-                    }
-                }
-                val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
-                listView.adapter = adapter
-            }
-        });
+//        restaRef.whereIn(restaRef.id, )
+//            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        for (QueryDocumentSnapshot document : task.getResult()) {
+//                            Log.d(TAG, document.getId() + " => " + document.getData());
+//                        }
+//                    } else {
+//                        Log.w(TAG, "Error getting documents.", task.getException());
+//                    }
+//                }
+//        ref = FirebaseDatabase.getInstance().getReference("restaurants")
+//        ref.addValueEventListener(object: ValueEventListener {
+//            override fun onCancelled(p0: DatabaseError) {
+//
+//            }
+//
+//            override fun onDataChange(p0: DataSnapshot) {
+//                if(p0!!.exists()){
+//                    for (r in p0.children){
+//                        val resta = r.getValue(Restaurant::class.java)
+//                        restaurantList.add(resta!!)
+//                    }
+//                }
+//                val adapter = RestaurantAdapter(applicationContext, R.layout.restaurants, restaurantList)
+//                listView.adapter = adapter
+//            }
+//        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
